@@ -21,6 +21,10 @@ public struct Tile
 
 public class GridManager : MonoBehaviour
 {
+    enum Direction
+	{
+        North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest
+	};
 
     List<List<Tile>> board = new List<List<Tile>>();
     public GameObject tileHighlight;
@@ -103,12 +107,34 @@ public class GridManager : MonoBehaviour
 
     bool IsValidMove(int x, int y, bool team)
     {
+        if (x >= width || y >= length || x < 0 || y < 0)
+            return false;
+        if (board[x][y].occupied == true)
+            return false;
+        bool enemyFound = false;
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+                if (i == 0 & j == 0)
+                {
+                    continue;
+                }
+                if (board[x + i][y + j].occupied == true && board[x + i][y + j].team != team)
+                {
+                    enemyFound = true;
+                }
+            }
+        }
+        if (enemyFound == false)
+            return false;
 
-        return false;
+        return true;
     }
 
     bool MakeMove(int x, int y, bool team)
     {
+
         return false;
     }
 
@@ -121,4 +147,6 @@ public class GridManager : MonoBehaviour
     {
         return false;
     }
+
+    bool EnemyInDirection()
 }
