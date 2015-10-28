@@ -51,16 +51,10 @@ public class GridManager : MonoBehaviour
     List<List<Tile>> board = new List<List<Tile>>();
     public GameObject tileHighlight;
     public GameObject counterInst;
-	//Use this list to store all available moves for the current turn
-	//Needs to be cleared before the next turn
-	List<Vector2> avail_moves;
-
-	Team currentGo = Team.BLACK;
-
-	public const int width = 8, height = 8;
-	public int blackCount = 0, whiteCount = 0;
-    const Tile white = new Tile(Team.WHITE, true);
-    const Tile black = new Tile(Team.BLACK, true);
+	public GameObject TranscounterInst;
+    public int width = 8, height = 8, blackCount = 0, whiteCount = 0;
+    Tile white = new Tile(Team.WHITE, true);
+    Tile black = new Tile(Team.BLACK, true);
 
     // Use this for initialization
     void Start()
@@ -80,6 +74,7 @@ public class GridManager : MonoBehaviour
 
         Debug.Log("Black tiles: " + blackCount + ", white tiles " + whiteCount + ".");
         UpdateBoard();
+		ShowValidMoves (Team.BLACK);
     }
 
     void CreateBoard()
@@ -141,6 +136,7 @@ public class GridManager : MonoBehaviour
 
     bool IsValidMove(int x, int y, Team team)
     {
+
         if (x >= width || y >= height || x < 0 || y < 0)
             return false;
         if (board[x][y].Occupied() == true)
@@ -150,6 +146,7 @@ public class GridManager : MonoBehaviour
         {
             for (int j = -1; j <= 1; j++)
             {
+
                 if (i == 0 & j == 0)
                 {
                     continue;
@@ -158,6 +155,7 @@ public class GridManager : MonoBehaviour
                 {
                     enemyFound = true;
                 }
+                
             }
         }
         if (enemyFound == false)
@@ -166,30 +164,6 @@ public class GridManager : MonoBehaviour
         return true;
     }
 
-	void FindValidMoves()
-	{
-		//loop through all grid spaces
-		for (int i = 0; i < width; i++)
-		{
-			for(int j = 0; j < height; j++)
-			{
-				//if tile is occupied - ignore
-				if(board[i][j].Occupied())
-					continue;
-				//check if the tile could be taken by current player
-				else
-				{
-
-				}
-			}
-		}
-
-
-
-		//if it can, add it to the list of available tiles
-	}
-
-	//Check if 2 counters are on the same team
     bool OpposingCounter(Team first, Team second)
     {
         if ((first == Team.WHITE && second == Team.BLACK) || (first == Team.BLACK && second == Team.WHITE))
@@ -201,25 +175,32 @@ public class GridManager : MonoBehaviour
 
     bool MakeMove(int x, int y, bool team)
     {
-		//make the move
 
-
-
-		SwitchPlayerTurn();
         return false;
     }
 
-	void SwitchPlayerTurn()
-	{
-		if (currentGo == Team.BLACK)
-			currentGo = Team.WHITE;
-		else
-			currentGo = Team.BLACK;
-	}
-    void ShowValidMoves(bool team)
+    void ShowValidMoves(Team team)
     {
+		for (int i = 0; i < height; i++)
+		{
+			for (int j = 0; j < width; j++)
+			{
+				if(IsValidMove(i,j,team))
+				   {
+					float locX = i - (height - 1) / 2.0f;
+					float locY = j - (width - 1) / 2.0f;
+					locX *= 10.0f;
+					locY *= 10.0f;
+					GameObject counter = (GameObject)Instantiate(TranscounterInst, new Vector3(locX, 1.5f, locY), Quaternion.Euler(Vector3.zero));
+					if (board[i][j].Team() == Team.BLACK)
+						{
+							counter.transform.rotation = Quaternion.Euler(new Vector3(180.0f, 0.0f, 0.0f));
+						}
+					}
+				}
+			}
+		}
 
-    }
 
     //checks for game terminating conditions
     bool CheckEndGame()
@@ -239,10 +220,6 @@ public class GridManager : MonoBehaviour
                     ret = false;
             }
         }
-
-		ret = true;
-
-
 
         return ret;
     }
