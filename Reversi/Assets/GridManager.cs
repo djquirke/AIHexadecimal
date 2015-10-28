@@ -14,12 +14,6 @@ struct Tile
     Team team;
     bool occupied;
 
-    //public Tile()
-    //{
-    //   team = false;
-    //   occupied = false;
-    //}
-
     public Tile(Team team, bool occupied)
     {
         this.team = team;
@@ -57,10 +51,16 @@ public class GridManager : MonoBehaviour
     List<List<Tile>> board = new List<List<Tile>>();
     public GameObject tileHighlight;
     public GameObject counterInst;
+	//Use this list to store all available moves for the current turn
+	//Needs to be cleared before the next turn
+	List<Vector2> avail_moves;
 
-    public int width = 8, height = 8, blackCount = 0, whiteCount = 0;
-    Tile white = new Tile(Team.WHITE, true);
-    Tile black = new Tile(Team.BLACK, true);
+	Team currentGo = Team.BLACK;
+
+	public const int width = 8, height = 8;
+	public int blackCount = 0, whiteCount = 0;
+    const Tile white = new Tile(Team.WHITE, true);
+    const Tile black = new Tile(Team.BLACK, true);
 
     // Use this for initialization
     void Start()
@@ -166,6 +166,30 @@ public class GridManager : MonoBehaviour
         return true;
     }
 
+	void FindValidMoves()
+	{
+		//loop through all grid spaces
+		for (int i = 0; i < width; i++)
+		{
+			for(int j = 0; j < height; j++)
+			{
+				//if tile is occupied - ignore
+				if(board[i][j].Occupied())
+					continue;
+				//check if the tile could be taken by current player
+				else
+				{
+
+				}
+			}
+		}
+
+
+
+		//if it can, add it to the list of available tiles
+	}
+
+	//Check if 2 counters are on the same team
     bool OpposingCounter(Team first, Team second)
     {
         if ((first == Team.WHITE && second == Team.BLACK) || (first == Team.BLACK && second == Team.WHITE))
@@ -177,10 +201,21 @@ public class GridManager : MonoBehaviour
 
     bool MakeMove(int x, int y, bool team)
     {
+		//make the move
 
+
+
+		SwitchPlayerTurn();
         return false;
     }
 
+	void SwitchPlayerTurn()
+	{
+		if (currentGo == Team.BLACK)
+			currentGo = Team.WHITE;
+		else
+			currentGo = Team.BLACK;
+	}
     void ShowValidMoves(bool team)
     {
 
@@ -204,6 +239,10 @@ public class GridManager : MonoBehaviour
                     ret = false;
             }
         }
+
+		ret = true;
+
+
 
         return ret;
     }
