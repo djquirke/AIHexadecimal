@@ -58,9 +58,9 @@ public class GridManager : MonoBehaviour
 	Team currentGo = Team.BLACK;
 
 	public const int width = 8, height = 8;
-	public int blackCount = 0, whiteCount = 0;
-    const Tile white = new Tile(Team.WHITE, true);
-    const Tile black = new Tile(Team.BLACK, true);
+	private int blackCount = 0, whiteCount = 0;
+    Tile white = new Tile(Team.WHITE, true);
+    Tile black = new Tile(Team.BLACK, true);
 
     // Use this for initialization
     void Start()
@@ -121,7 +121,7 @@ public class GridManager : MonoBehaviour
         {
             for (int j = 0; j < width; j++)
             {
-                if (board[i][j].Occupied() == true)
+                if (board[i][j].Occupied())
                 {
                     //Set tile location
                     float locX = i - (height - 1) / 2.0f;
@@ -143,7 +143,7 @@ public class GridManager : MonoBehaviour
     {
         if (x >= width || y >= height || x < 0 || y < 0)
             return false;
-        if (board[x][y].Occupied() == true)
+        if (board[x][y].Occupied())
             return false;
         bool enemyFound = false;
         for (int i = -1; i <= 1; i++)
@@ -154,7 +154,7 @@ public class GridManager : MonoBehaviour
                 {
                     continue;
                 }
-                if (board[x + i][y + j].Occupied() == true && OpposingCounter(board[x + i][y + j].Team(), team))
+                if (board[x + i][y + j].Occupied() && OpposingCounter(board[x + i][y + j].Team(), team))
                 {
                     enemyFound = true;
                 }
@@ -166,8 +166,11 @@ public class GridManager : MonoBehaviour
         return true;
     }
 
-	void FindValidMoves()
+	//check if any moves are available for current player
+	bool IsMoveAvailable()
 	{
+		bool ret = false;
+
 		//loop through all grid spaces
 		for (int i = 0; i < width; i++)
 		{
@@ -179,14 +182,16 @@ public class GridManager : MonoBehaviour
 				//check if the tile could be taken by current player
 				else
 				{
-
+					if(IsValidMove(i, j))
+					{
+						ret = true;
+						break;
+					}
 				}
 			}
 		}
 
-
-
-		//if it can, add it to the list of available tiles
+		return ret;
 	}
 
 	//Check if 2 counters are on the same team
@@ -216,6 +221,7 @@ public class GridManager : MonoBehaviour
 		else
 			currentGo = Team.BLACK;
 	}
+
     void ShowValidMoves(bool team)
     {
 
@@ -224,27 +230,24 @@ public class GridManager : MonoBehaviour
     //checks for game terminating conditions
     bool CheckEndGame()
     {
-        bool ret = false;
-
         //check if any moves available for current players go
-        //if moves are available - ret = false
-        //no moves - ret = true
+		if (!IsMoveAvailable ())
+			return true;
+
 
         for (int i = 0; i < height; i++)
         {
             for (int j = 0; j < width; j++)
             {
                 //if not a space is not occupied then board is not full
-                if (board[i][j].Occupied() == false)
-                    ret = false;
+                if (!board[i][j].Occupied())
+				{
+					return false;
+				}
             }
         }
 
-		ret = true;
-
-
-
-        return ret;
+		return true;
     }
 
     bool EnemyInDirection()
