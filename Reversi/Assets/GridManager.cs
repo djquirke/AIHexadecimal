@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public enum Team
 {
@@ -115,10 +116,6 @@ public class GridManager : MonoBehaviour
                     {
                         counter.transform.rotation = Quaternion.Euler(new Vector3(180.0f, 0.0f, 0.0f));
                     }
-                    else
-                    {
-                        Debug.Log("WHITE FOUND");
-                    }
                 }
             }
         }
@@ -129,8 +126,29 @@ public class GridManager : MonoBehaviour
         SwitchPlayerTurn();
         UpdateBoard();
         if(!IsMoveAvailable(currentGo))
-        {
-            Debug.Log("WINNER");
+		{
+			blackCount = 0;
+			whiteCount = 0;
+            for (int i = 0; i < width; i++) {
+				for (int j = 0; j < height; j++) {
+					if(board[i][j].team == Team.BLACK)
+					{
+						blackCount++;
+					}
+					else if(board[i][j].team == Team.WHITE)
+					{
+						whiteCount++;
+					}
+				}
+            }
+
+			if(blackCount > whiteCount)
+				Debug.Log("BLACK IS WIN");
+			else if(whiteCount > blackCount)
+				Debug.Log("WHITE IS WIN");
+			else
+				Debug.Log("DRAW");
+            //SwitchPlayerTurn();
         }
         foreach (var item in GameObject.FindGameObjectsWithTag("Marker"))
         {
@@ -423,6 +441,8 @@ public class GridManager : MonoBehaviour
         int newX = GetCoordinatesFromDirection(direction)[0] + x;
         int newY = GetCoordinatesFromDirection(direction)[1] + y;
         //If the direction contains a friendly tile, return that a move can be made in that direction
+        if (newX < 0 || newY < 0 || newX >= width || newY >= height)
+            return false;
         if(board[newX][newY].team == team)
         {
             return true;
@@ -433,6 +453,7 @@ public class GridManager : MonoBehaviour
             if(SetTilesOnCapture(newX, newY, team, direction))
             {
                 board[newX][newY] = new Tile(team, true);
+                return true;
             }
         }
         //If empty tile, return false
@@ -466,7 +487,24 @@ public class GridManager : MonoBehaviour
                 Debug.Log("SETTING TILES");
                 SetTilesOnCapture(x, y, team, direction);
             }
+
             NewTurn();
         }
+		blackCount = 0;
+		whiteCount = 0;
+		for (int i = 0; i < width; i++) {
+			for (int j = 0; j < height; j++) {
+				if(board[i][j].team == Team.BLACK)
+				{
+					blackCount++;
+				}
+				else if(board[i][j].team == Team.WHITE)
+				{
+					whiteCount++;
+				}
+			}
+		}
+		GameObject.Find ("WhiteScore").GetComponent<Text> ().text = ("WHITE COUNTERS: " + whiteCount);
+		GameObject.Find ("BlackScore").GetComponent<Text> ().text = ("BLACK COUNTERS: " + blackCount);
     }
 }
