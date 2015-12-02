@@ -19,6 +19,7 @@ public class MoveMarkerManager : MonoBehaviour {
         Debug.Log("CLICK");
 		GameObject.Find("Board").GetComponent<GridManager> ().PlayerMove (x, y);
 		GameObject.Find("Board").GetComponent<GridManager>().AiTurn(Team.WHITE);
+		GameObject.Find("Board").GetComponent<GridManager>().SumCounters();
 
     }
 }

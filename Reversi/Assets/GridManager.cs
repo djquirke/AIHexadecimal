@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
@@ -65,12 +66,9 @@ public class GridManager : MonoBehaviour
     List<List<Tile>> board_ = new List<List<Tile>>();
     public GameObject tileHighlight;
     public GameObject counterInst;
-    //Use this list to store all available moves for the current turn
-    //Needs to be cleared before the next turn
-    List<move> avail_moves;
 
     Team playerTeam = Team.BLACK;
-    Team currentGo = Team.WHITE;
+    Team currentGo = Team.BLACK;
 
     public const int width = 8, height = 8;
     private int blackCount = 0, whiteCount = 0;
@@ -83,12 +81,13 @@ public class GridManager : MonoBehaviour
         CreateBoard();
         SetUpBoard();
         UpdateBoard(board_);
-        ShowValidMoves(currentGo,board_);
+        ShowValidMoves(currentGo, board_);
     }
 
     // Update is called once per frame
     void Update()
     {
+		DisplayScore();
     }
 
     void CreateBoard()
@@ -188,14 +187,14 @@ public class GridManager : MonoBehaviour
 	public void AiTurn(Team team)
 	{
 		//StoreValidMoves (team);
-		TreeNode Root = new TreeNode();
-		Root.board = board_;
-		Root.team = team;
-		TreeNode selected = AISelection (Root);
-		Simulation (selected);
-		float bestQ = -255;
+		TreeNode root = new TreeNode();
+		root.board = board_;
+		root.team = team;
+		TreeNode selected = AISelection (root);
+		//Simulation (selected);
+		float bestQ = -9999999;
 		TreeNode bestNode = new TreeNode();
-		foreach(TreeNode node in Root.Children)
+		foreach(TreeNode node in root.Children)
 		{
 			if(node.Q > bestQ)
 			{
@@ -203,23 +202,23 @@ public class GridManager : MonoBehaviour
 				bestNode = node;
 			}
 		}
-		MakeMove (bestNode.Move.x, bestNode.Move.y, Team.WHITE,board_);
+		MakeMove (bestNode.Move.x, bestNode.Move.y, Team.WHITE);
 	}
 	
-	TreeNode AISelection(TreeNode Root)
+	TreeNode AISelection(TreeNode root)
 	{
 		TreeNode bestchild = new TreeNode();
 		float bestUCT = -999999;
 		
-		if (Root.Children.Count == 0)
+		if (root.Children.Count == 0)
 		{
 
-				return Expand(Root);
+				return Expand(root);
 
 		} 
 		else
 		{
-			foreach (TreeNode node in Root.Children) 
+			foreach (TreeNode node in root.Children) 
 			{
 				if ( node.N == 0)
 				{
@@ -247,22 +246,23 @@ public class GridManager : MonoBehaviour
 		{
 			TreeNode newnode = new TreeNode();
 			newnode.Parent = node;
-			node.Children.Add(newnode);
-			newnode.board = node.board;
 			if(node.team == Team.WHITE)
 			{
 				newnode.team = Team.BLACK;
-				newnode.board[move.x][move.y].team = Team.WHITE;
+				newnode.board = SimulateMove(move, node.team, node.board);
+				//newnode.board[move.x][move.y].team = Team.WHITE;
 			}
 			else
 			{
 				newnode.team = Team.WHITE;
-				newnode.board[move.x][move.y].team = Team.BLACK;
+				newnode.board = SimulateMove(move, node.team, node.board);
+				//newnode.board[move.x][move.y].team = Team.BLACK;
 			}
 			
-				newnode.Move = move;	
+			newnode.Move = move;	
+			node.Children.Add(newnode);
 		}
-		int x = Random.Range (0, movesList.Count -1);
+		int x = UnityEngine.Random.Range (0, node.Children.Count -1);
 
 		return node.Children [x];
 
@@ -283,7 +283,7 @@ public class GridManager : MonoBehaviour
 			}
 
 			List<move> valid_moves = StoreValidMoves(state.team, state.board);
-			int r = Random.Range(0, valid_moves.Count - 1);
+			int r = UnityEngine.Random.Range(0, valid_moves.Count - 1);
 
 			MakeMove(valid_moves[r].x, valid_moves[r].y, state.team, state.board);
 		}
@@ -643,7 +643,7 @@ public class GridManager : MonoBehaviour
         int newX = GetCoordinatesFromDirection(direction)[0] + x;
         int newY = GetCoordinatesFromDirection(direction)[1] + y;
         //If the direction contains a friendly tile, return that a move can be made in that direction
-        if (newX < 0 || newY < 0 || newX >= width || newY >= height)
+        if (newX < 0 || newY < 0 || newX >= width || newY >= height || board[newX][newY].occupied == false)
             return false;
         if(board[newX][newY].team == team)
         {
@@ -664,7 +664,7 @@ public class GridManager : MonoBehaviour
 
     public void PlayerMove(int x, int y)
     {
-        MakeMove(x, y, currentGo);
+        MakeMove(x, y, Team.BLACK);
     }
 
     void MakeMove(int x, int y, Team team)
@@ -677,11 +677,11 @@ public class GridManager : MonoBehaviour
 
             //Check every direction to see if tiles could be claimed
             List<Direction> enemyDirections = new List<Direction>();
-            for (int i = 0; i < 10; i++)
-            {
-                if (EnemyInDirection((Direction)i, team, x, y, board_))
+			foreach(var dir in Enum.GetValues(typeof(Direction)))
+			{
+                if (EnemyInDirection((Direction)dir, team, x, y, board_))
                 {
-                    enemyDirections.Add((Direction)i);
+                    enemyDirections.Add((Direction)dir);
                 }
             }
             //Go though all directions enemy found, see if can claim tiles
@@ -694,9 +694,13 @@ public class GridManager : MonoBehaviour
             NewTurn(board_);
         }
 		SumCounters (board_);
+    }
+
+	void DisplayScore()
+	{
 		GameObject.Find ("WhiteScore").GetComponent<Text> ().text = ("WHITE COUNTERS: " + whiteCount);
 		GameObject.Find ("BlackScore").GetComponent<Text> ().text = ("BLACK COUNTERS: " + blackCount);
-    }
+	}
 
 	void MakeMove(int x, int y, Team team, List<List<Tile>> board)
     {
@@ -708,11 +712,11 @@ public class GridManager : MonoBehaviour
 
             //Check every direction to see if tiles could be claimed
             List<Direction> enemyDirections = new List<Direction>();
-            for (int i = 0; i < 10; i++)
-            {
-                if (EnemyInDirection((Direction)i, team, x, y, board))
+			foreach(var dir in Enum.GetValues(typeof(Direction)))
+			{
+                if (EnemyInDirection((Direction)dir, team, x, y, board))
                 {
-                    enemyDirections.Add((Direction)i);
+                    enemyDirections.Add((Direction)dir);
                 }
             }
             //Go though all directions enemy found, see if can claim tiles
@@ -723,10 +727,38 @@ public class GridManager : MonoBehaviour
             }
 
             NewTurn(board);
+			SumCounters();
         }
     }
 
-	void SumCounters(List<List<Tile>> board)
+	List<List<Tile>> SimulateMove(move pos, Team team, List<List<Tile>> board)
+	{
+		List<List<Tile>> newBoard = new List<List<Tile>>();
+		newBoard = board;
+
+		if(IsValidMove(pos.x, pos.y, team, newBoard))
+		{
+			newBoard[pos.x][pos.y] = new Tile(team, false);
+
+			List<Direction> enemyDirections = new List<Direction>();
+			foreach(var dir in Enum.GetValues(typeof(Direction)))
+			{
+				if(EnemyInDirection((Direction)dir, team, pos.x, pos.y, newBoard))
+				{
+					enemyDirections.Add ((Direction)dir);
+				}
+			}
+
+			foreach(Direction dir in enemyDirections)
+			{
+				SetTilesOnCapture(pos.x, pos.y, team, dir, newBoard);
+			}
+		}
+
+		return newBoard;
+	}
+
+	public void SumCounters(List<List<Tile>> board)
 	{
 		blackCount = 0;
 		whiteCount = 0;
@@ -744,4 +776,21 @@ public class GridManager : MonoBehaviour
 		}
 	}
 
+	public void SumCounters()
+	{
+		blackCount = 0;
+		whiteCount = 0;
+		for (int i = 0; i < width; i++) {
+			for (int j = 0; j < height; j++) {
+				if(board_[i][j].team == Team.BLACK)
+				{
+					blackCount++;
+				}
+				else if(board_[i][j].team == Team.WHITE)
+				{
+					whiteCount++;
+				}
+			}
+		}
+	}
 }

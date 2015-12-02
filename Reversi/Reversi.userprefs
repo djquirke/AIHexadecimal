@@ -1,0 +1,16 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\GridManager.cs">
+    <Files>
+      <File FileName="Assets\GridManager.cs" Line="139" Column="35" />
+      <File FileName="Assets\MoveMarkerManager.cs" Line="24" Column="6" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore>
+      <Breakpoint file="I:\Uni Work\Year 3\AI\AIHexadecimal\Reversi\Assets\GridManager.cs" line="221" />
+      <Breakpoint file="I:\Uni Work\Year 3\AI\AIHexadecimal\Reversi\Assets\GridManager.cs" line="690" />
+    </BreakpointStore>
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
