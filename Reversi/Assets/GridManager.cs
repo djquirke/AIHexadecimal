@@ -23,6 +23,7 @@ public class Tile
 
 class TreeNode
 {
+	public move Move;
 	public Team team;
 	public List<TreeNode> Children;
 	public TreeNode Parent = null;
@@ -30,12 +31,7 @@ class TreeNode
 	public List<List<Tile>> board;
 	public TreeNode ()
 	{
-	}
-	public void AddChild()
-	{
-		TreeNode node = new TreeNode();
-		Children.Add(node);
-		
+		Children = new List<TreeNode> ();
 	}
 	
 	public float CalculateUCT ()
@@ -74,7 +70,7 @@ public class GridManager : MonoBehaviour
     List<move> avail_moves;
 
     Team playerTeam = Team.BLACK;
-    Team currentGo = Team.BLACK;
+    Team currentGo = Team.WHITE;
 
     public const int width = 8, height = 8;
     private int blackCount = 0, whiteCount = 0;
@@ -86,20 +82,13 @@ public class GridManager : MonoBehaviour
     {
         CreateBoard();
         SetUpBoard();
-        UpdateBoard();
+        UpdateBoard(board_);
         ShowValidMoves(currentGo,board_);
     }
 
     // Update is called once per frame
     void Update()
     {
-        //if (CheckEndGame())
-        //{
-        //    //display win/lose screen
-        //}
-
-        //Debug.Log("Black tiles: " + blackCount + ", white tiles " + whiteCount + ".");
-        //UpdateBoard();
     }
 
     void CreateBoard()
@@ -130,7 +119,7 @@ public class GridManager : MonoBehaviour
         blackCount += 2;
     }
 
-    void UpdateBoard()
+    void UpdateBoard(List<List<Tile>> board)
     {
         foreach (var counter in GameObject.FindGameObjectsWithTag("Counter"))
         {
@@ -141,7 +130,7 @@ public class GridManager : MonoBehaviour
         {
             for (int j = 0; j < width; j++)
             {
-                if (board_[i][j].occupied)
+                if (board[i][j].occupied)
                 {
                     //Set tile location
                     float locX = i - (height - 1) / 2.0f;
@@ -150,7 +139,7 @@ public class GridManager : MonoBehaviour
                     locX *= 10.0f;
                     locY *= 10.0f;
                     GameObject counter = (GameObject)Instantiate(counterInst, new Vector3(locX, 1.5f, locY), Quaternion.Euler(Vector3.zero));
-                    if (board_[i][j].team == Team.BLACK)
+                    if (board[i][j].team == Team.BLACK)
                     {
                         counter.transform.rotation = Quaternion.Euler(new Vector3(180.0f, 0.0f, 0.0f));
                     }
@@ -159,10 +148,10 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    void NewTurn()
+    void NewTurn(List<List<Tile>> board)
     {
         SwitchPlayerTurn();
-        UpdateBoard();
+        UpdateBoard(board);
         if(!IsMoveAvailable(currentGo))
 		{
 			blackCount = 0;
@@ -196,25 +185,36 @@ public class GridManager : MonoBehaviour
 
     }
 
-	void AiTurn(Team team)
+	public void AiTurn(Team team)
 	{
 		//StoreValidMoves (team);
 		TreeNode Root = new TreeNode();
 		Root.board = board_;
 		Root.team = team;
-		AISelection (Root);
-		//simulate
-		//back propagate
+		TreeNode selected = AISelection (Root);
+		Simulation (selected);
+		float bestQ = -255;
+		TreeNode bestNode = new TreeNode();
+		foreach(TreeNode node in Root.Children)
+		{
+			if(node.Q > bestQ)
+			{
+				bestQ = node.Q;
+				bestNode = node;
+			}
+		}
+		MakeMove (bestNode.Move.x, bestNode.Move.y, Team.WHITE,board_);
 	}
 	
 	TreeNode AISelection(TreeNode Root)
 	{
 		TreeNode bestchild = new TreeNode();
-		float bestUCT = 0;
+		float bestUCT = -999999;
 		
 		if (Root.Children.Count == 0)
 		{
-			return Expand(Root);
+
+				return Expand(Root);
 
 		} 
 		else
@@ -247,6 +247,8 @@ public class GridManager : MonoBehaviour
 		{
 			TreeNode newnode = new TreeNode();
 			newnode.Parent = node;
+			node.Children.Add(newnode);
+			newnode.board = node.board;
 			if(node.team == Team.WHITE)
 			{
 				newnode.team = Team.BLACK;
@@ -258,12 +260,84 @@ public class GridManager : MonoBehaviour
 				newnode.board[move.x][move.y].team = Team.BLACK;
 			}
 			
-					
+				newnode.Move = move;	
 		}
 		int x = Random.Range (0, movesList.Count -1);
 
 		return node.Children [x];
 
+	}
+
+	void Simulation(TreeNode state)
+	{
+		bool terminal = false;
+
+		while (!terminal)
+		{
+			for (int i = 0; i < height; i++)
+			{
+				for (int j = 0; j < width; j++)
+				{
+					terminal = IsValidMove(i,j,state.team,state.board);
+				}
+			}
+
+			List<move> valid_moves = StoreValidMoves(state.team, state.board);
+			int r = Random.Range(0, valid_moves.Count - 1);
+
+			MakeMove(valid_moves[r].x, valid_moves[r].y, state.team, state.board);
+		}
+
+		SumCounters (state.board);
+	
+		if (whiteCount < blackCount) {
+			//Black wins
+			if(state.team==Team.WHITE)
+			{
+				Backup(state,-1);
+			}
+			else{
+
+				Backup(state,1);
+			}
+		} else if (whiteCount > blackCount) {
+			//White wins
+			if(state.team==Team.WHITE)
+			{
+				Backup(state,1);
+			}
+			else{
+				
+				Backup(state,-1);
+			}
+		} else {
+			Backup(state,0);
+		}
+
+
+
+
+		//THIS STATE'S TEAM WINS
+		//PLAYER WINS
+		//DRAW
+	}
+
+	void Backup(TreeNode selected, int score)
+	{
+		while (selected != null)
+		{
+			selected.N ++;
+			//AI PLAYS AS WHITE
+			if (selected.team.Equals(Team.WHITE))
+			{
+				selected.Q += score;
+			}
+			else if (selected.team.Equals(Team.BLACK))
+			{
+				selected.Q -= score;
+			}
+			Backup(selected.Parent, -score);
+		}
 	}
 
 
@@ -281,7 +355,7 @@ public class GridManager : MonoBehaviour
         List<Direction> enemyDirections = new List<Direction>();
         for (int i = 0; i < 10; i++)
         {
-            if (EnemyInDirection((Direction)i, team, x, y))
+            if (EnemyInDirection((Direction)i, team, x, y, board))
             {
                 enemyFound = true;
                 enemyDirections.Add((Direction)i);
@@ -295,7 +369,7 @@ public class GridManager : MonoBehaviour
         else
             foreach (var direction in enemyDirections)
             {
-                if (ValidMoveRecursion(x, y, team, direction))
+                if (ValidMoveRecursion(x, y, team, direction, board))
                 {
                     validMove = true;
                 }
@@ -303,16 +377,16 @@ public class GridManager : MonoBehaviour
         return validMove;
     }
 
-    bool ValidMoveRecursion(int x, int y, Team team, Direction direction)
+	bool ValidMoveRecursion(int x, int y, Team team, Direction direction, List<List<Tile>> board)
     {
         //Generate new coordinates based on direction
         int newX = GetCoordinatesFromDirection(direction)[0] + x;
         int newY = GetCoordinatesFromDirection(direction)[1] + y;
 
         //Call the function again if there is an enemy
-        if (EnemyInDirection(direction, team, x, y))
+        if (EnemyInDirection(direction, team, x, y, board))
         {
-            return ValidMoveRecursion(newX, newY, team, direction);
+            return ValidMoveRecursion(newX, newY, team, direction, board);
         }
 
         //If there isn't an enemy in the tile, run the checks to see if it's a valid move
@@ -320,7 +394,7 @@ public class GridManager : MonoBehaviour
         {
             return false;
         }
-        if (board_[newX][newY].team == team)
+        if (board[newX][newY].team == team)
         {
             return true;
 
@@ -473,7 +547,7 @@ public class GridManager : MonoBehaviour
         return coordinates;
     }
 
-    bool EnemyInDirection(Direction direction, Team team, int x, int y)
+    bool EnemyInDirection(Direction direction, Team team, int x, int y, List<List<Tile>> board)
     {
         switch (direction)
         {
@@ -482,7 +556,7 @@ public class GridManager : MonoBehaviour
                 {
                     return false;
                 }
-                if (board_[x][y + 1].occupied == true && board_[x][y + 1].team != team)
+                if (board[x][y + 1].occupied == true && board[x][y + 1].team != team)
                 {
                     return true;
                 }
@@ -492,7 +566,7 @@ public class GridManager : MonoBehaviour
                 {
                     return false;
                 }
-                if (board_[x + 1][y + 1].occupied == true && board_[x + 1][y + 1].team != team)
+                if (board[x + 1][y + 1].occupied == true && board[x + 1][y + 1].team != team)
                 {
                     return true;
                 }
@@ -502,7 +576,7 @@ public class GridManager : MonoBehaviour
                 {
                     return false;
                 }
-                if (board_[x + 1][y].occupied == true && board_[x + 1][y].team != team)
+                if (board[x + 1][y].occupied == true && board[x + 1][y].team != team)
                 {
                     return true;
                 }
@@ -512,7 +586,7 @@ public class GridManager : MonoBehaviour
                 {
                     return false;
                 }
-                if (board_[x + 1][y - 1].occupied == true && board_[x + 1][y - 1].team != team)
+                if (board[x + 1][y - 1].occupied == true && board[x + 1][y - 1].team != team)
                 {
                     return true;
                 }
@@ -522,7 +596,7 @@ public class GridManager : MonoBehaviour
                 {
                     return false;
                 }
-                if (board_[x][y - 1].occupied == true && board_[x][y - 1].team != team)
+                if (board[x][y - 1].occupied == true && board[x][y - 1].team != team)
                 {
                     return true;
                 }
@@ -532,7 +606,7 @@ public class GridManager : MonoBehaviour
                 {
                     return false;
                 }
-                if (board_[x - 1][y - 1].occupied == true && board_[x - 1][y - 1].team != team)
+                if (board[x - 1][y - 1].occupied == true && board[x - 1][y - 1].team != team)
                 {
                     return true;
                 }
@@ -542,7 +616,7 @@ public class GridManager : MonoBehaviour
                 {
                     return false;
                 }
-                if (board_[x - 1][y].occupied == true && board_[x - 1][y].team != team)
+                if (board[x - 1][y].occupied == true && board[x - 1][y].team != team)
                 {
                     return true;
                 }
@@ -552,7 +626,7 @@ public class GridManager : MonoBehaviour
                 {
                     return false;
                 }
-                if (board_[x - 1][y + 1].occupied == true && board_[x - 1][y + 1].team != team)
+                if (board[x - 1][y + 1].occupied == true && board[x - 1][y + 1].team != team)
                 {
                     return true;
                 }
@@ -563,7 +637,7 @@ public class GridManager : MonoBehaviour
         return false;
     }
 
-    bool SetTilesOnCapture(int x, int y, Team team, Direction direction)
+	bool SetTilesOnCapture(int x, int y, Team team, Direction direction, List<List<Tile>> board)
     {
         //Generate new coordinates based on direction
         int newX = GetCoordinatesFromDirection(direction)[0] + x;
@@ -571,16 +645,16 @@ public class GridManager : MonoBehaviour
         //If the direction contains a friendly tile, return that a move can be made in that direction
         if (newX < 0 || newY < 0 || newX >= width || newY >= height)
             return false;
-        if(board_[newX][newY].team == team)
+        if(board[newX][newY].team == team)
         {
             return true;
         }
         //If enemy tile, check the next tile to see if it is friendly
-        if (EnemyInDirection(direction, team, x, y))
+        if (EnemyInDirection(direction, team, x, y, board))
         {
-            if(SetTilesOnCapture(newX, newY, team, direction))
+            if(SetTilesOnCapture(newX, newY, team, direction, board))
             {
-                board_[newX][newY] = new Tile(team, true);
+                board[newX][newY] = new Tile(team, true);
                 return true;
             }
         }
@@ -592,6 +666,7 @@ public class GridManager : MonoBehaviour
     {
         MakeMove(x, y, currentGo);
     }
+
     void MakeMove(int x, int y, Team team)
     {
         //Double check move is valid
@@ -604,7 +679,7 @@ public class GridManager : MonoBehaviour
             List<Direction> enemyDirections = new List<Direction>();
             for (int i = 0; i < 10; i++)
             {
-                if (EnemyInDirection((Direction)i, team, x, y))
+                if (EnemyInDirection((Direction)i, team, x, y, board_))
                 {
                     enemyDirections.Add((Direction)i);
                 }
@@ -613,26 +688,60 @@ public class GridManager : MonoBehaviour
             foreach (var direction in enemyDirections)
             {
                 Debug.Log("SETTING TILES");
-                SetTilesOnCapture(x, y, team, direction);
+                SetTilesOnCapture(x, y, team, direction, board_);
             }
 
-            NewTurn();
+            NewTurn(board_);
         }
+		SumCounters (board_);
+		GameObject.Find ("WhiteScore").GetComponent<Text> ().text = ("WHITE COUNTERS: " + whiteCount);
+		GameObject.Find ("BlackScore").GetComponent<Text> ().text = ("BLACK COUNTERS: " + blackCount);
+    }
+
+	void MakeMove(int x, int y, Team team, List<List<Tile>> board)
+    {
+        //Double check move is valid
+        if (IsValidMove(x, y, team, board))
+        {
+            //Set claimed tile
+            board[x][y] = new Tile(team, true);
+
+            //Check every direction to see if tiles could be claimed
+            List<Direction> enemyDirections = new List<Direction>();
+            for (int i = 0; i < 10; i++)
+            {
+                if (EnemyInDirection((Direction)i, team, x, y, board))
+                {
+                    enemyDirections.Add((Direction)i);
+                }
+            }
+            //Go though all directions enemy found, see if can claim tiles
+            foreach (var direction in enemyDirections)
+            {
+                Debug.Log("SETTING TILES");
+                SetTilesOnCapture(x, y, team, direction, board);
+            }
+
+            NewTurn(board);
+        }
+    }
+
+	void SumCounters(List<List<Tile>> board)
+	{
 		blackCount = 0;
 		whiteCount = 0;
 		for (int i = 0; i < width; i++) {
 			for (int j = 0; j < height; j++) {
-				if(board_[i][j].team == Team.BLACK)
+				if(board[i][j].team == Team.BLACK)
 				{
 					blackCount++;
 				}
-				else if(board_[i][j].team == Team.WHITE)
+				else if(board[i][j].team == Team.WHITE)
 				{
 					whiteCount++;
 				}
 			}
 		}
-		GameObject.Find ("WhiteScore").GetComponent<Text> ().text = ("WHITE COUNTERS: " + whiteCount);
-		GameObject.Find ("BlackScore").GetComponent<Text> ().text = ("BLACK COUNTERS: " + blackCount);
-    }
+	}
+
 }
