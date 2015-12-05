@@ -2,8 +2,9 @@
 using System.Collections;
 
 public class MoveMarkerManager : MonoBehaviour {
-    public int x;
-    public int y;
+    
+	private int x, y;
+
 	// Use this for initialization
 	void Start () {
         
@@ -16,10 +17,16 @@ public class MoveMarkerManager : MonoBehaviour {
 
     void OnMouseDown()
     {
-        Debug.Log("CLICK");
-		GameObject.Find("Board").GetComponent<GridManager> ().PlayerMove (x, y);
-		GameObject.Find("Board").GetComponent<GridManager>().AiTurn(Team.WHITE);
-		GameObject.Find("Board").GetComponent<GridManager>().SumCounters();
-
+		GameObject.Find("Game Manager").GetComponent<GameManager> ().PlayerClick(x, y);
     }
+
+	public void setX(int x)
+	{
+		this.x = x;
+	}
+
+	public void setY(int y)
+	{
+		this.y = y;
+	}
 }

@@ -38,7 +38,6 @@ class TreeNode
 	public float CalculateUCT ()
 	{
 		return Q + (2*(1/Mathf.Sqrt(2))* Mathf.Sqrt((2*Mathf.Log10(Parent.N))/N));
-		
 	}
 
 }
@@ -55,13 +54,13 @@ public struct move
 
 
 }
-
+public enum Direction
+{
+	North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest
+};
 public class GridManager : MonoBehaviour
 {
-    enum Direction
-    {
-        North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest
-    };
+    
 
     List<List<Tile>> board_ = new List<List<Tile>>();
     public GameObject tileHighlight;
@@ -463,8 +462,8 @@ public class GridManager : MonoBehaviour
                     locX *= 10.0f;
                     locY *= 10.0f;
                     GameObject counter = (GameObject)Instantiate(tileHighlight, new Vector3(locX, 1.5f, locY), tileHighlight.transform.rotation);
-                    counter.GetComponent<MoveMarkerManager>().x = i;
-                    counter.GetComponent<MoveMarkerManager>().y = j;
+                    counter.GetComponent<MoveMarkerManager>().setX(i);
+                    counter.GetComponent<MoveMarkerManager>().setY(j);
                 }
             }
         }
