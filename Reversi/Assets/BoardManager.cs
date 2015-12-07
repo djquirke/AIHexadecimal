@@ -24,7 +24,8 @@ public class BoardManager : MonoBehaviour {
 		List<List<Tile>> board = new List<List<Tile>>();
 		board = CreateBoard(board);
 		board = SetUpBoard(board);
-		UpdateBoard(currentGo, ref board);
+		UpdateBoard(ref board);
+		ShowValidMoves(currentGo, board);
 
 		return board;
 	}
@@ -59,11 +60,10 @@ public class BoardManager : MonoBehaviour {
 		return board;
 	}
 
-	public void UpdateBoard(Team currentGo, ref List<List<Tile>> board)
+	public void UpdateBoard(ref List<List<Tile>> board)
 	{
 		//draw new board
 		DrawBoard(board);
-		ShowValidMoves(currentGo, board);
 	}
 	
 	void DrawBoard(List<List<Tile>> board)
@@ -71,6 +71,11 @@ public class BoardManager : MonoBehaviour {
 		foreach (var counter in GameObject.FindGameObjectsWithTag("Counter"))
 		{
 			GameObject.Destroy(counter);
+		}
+
+		foreach (var valid_move in GameObject.FindGameObjectsWithTag("Marker"))
+		{
+			GameObject.Destroy(valid_move);
 		}
 		
 		for (int i = 0; i < height; i++)
@@ -122,12 +127,15 @@ public class BoardManager : MonoBehaviour {
 		return ret;
 	}
 
-	void ShowValidMoves(Team team, List<List<Tile>> board)
+	public void ShowValidMoves(Team team, List<List<Tile>> board)
 	{
 		foreach (var item in GameObject.FindGameObjectsWithTag("Marker"))
 		{
 			Destroy(item);
 		}
+
+		if(!GameObject.Find("MoveLogic").GetComponent<MoveLogic>().AnyMovesAvail(team, board))
+			return;
 
 		MoveLogic logic = GameObject.Find("MoveLogic").GetComponent<MoveLogic>();
 		for (int i = 0; i < height; i++)
@@ -143,8 +151,8 @@ public class BoardManager : MonoBehaviour {
 					locX *= 10.0f;
 					locY *= 10.0f;
 					GameObject counter = (GameObject)Instantiate(highlight, new Vector3(locX, 1.5f, locY), highlight.transform.rotation);
-					counter.GetComponent<MoveMarkerManager>().setX(i);
-					counter.GetComponent<MoveMarkerManager>().setY(j);
+					counter.GetComponent<Player>().setX(i);
+					counter.GetComponent<Player>().setY(j);
 				}
 			}
 		}

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -14,6 +15,22 @@ public class MoveLogic : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 	
+	}
+
+	public bool AnyMovesAvail(Team team, List<List<Tile>> board)
+	{
+		bool ret = false;
+		for(int i = 0; i < height; i++)
+		{
+			for(int j = 0; j < width; j++)
+			{
+				if(IsValidMove(i, j, team, board))
+				{
+					ret = true;
+				}
+			}
+		}
+		return ret;
 	}
 
 	public bool IsValidMove(int x, int y, Team team, List<List<Tile>> board)
@@ -202,28 +219,65 @@ public class MoveLogic : MonoBehaviour {
 		return coordinates;
 	}
 
-	public bool SetTilesOnCapture(int x, int y, Team team, Direction direction, ref List<List<Tile>> board)
+	public bool SetTilesOnCapture(int x, int y, Team team, Direction direction, List<List<Tile>> board)
 	{
+		List<List<Tile>> temp_board = new List<List<Tile>>();
+		temp_board = board;
+
 		//Generate new coordinates based on direction
 		int newX = GetCoordinatesFromDirection(direction)[0] + x;
 		int newY = GetCoordinatesFromDirection(direction)[1] + y;
 		//If the direction contains a friendly tile, return that a move can be made in that direction
-		if (newX < 0 || newY < 0 || newX >= width || newY >= height || board[newX][newY].occupied == false)
+		if (newX < 0 || newY < 0 || newX >= width || newY >= height)
 			return false;
-		if(board[newX][newY].team == team)
+		if(temp_board[newX][newY].occupied == false)
+			return false;
+		if(temp_board[newX][newY].team == team)
 		{
 			return true;
 		}
 		//If enemy tile, check the next tile to see if it is friendly
-		if (EnemyInDirection(direction, team, x, y, board))
+		if (EnemyInDirection(direction, team, x, y, temp_board))
 		{
-			if(SetTilesOnCapture(newX, newY, team, direction, ref board))
+			if(SetTilesOnCapture(newX, newY, team, direction, temp_board))
 			{
-				board[newX][newY] = new Tile(team, true);
+                //Debug.Log("setting a tile");
+				temp_board[newX][newY] = new Tile(team, true);
 				return true;
 			}
 		}
 		//If empty tile, return false
 		return false;
+	}
+
+	public List<List<Tile>> MakeMove(int x, int y, Team team, List<List<Tile>> board)
+	{
+		List<List<Tile>> temp = GameObject.Find("AiAgent").GetComponent<AI>().CopyBoard(board);
+		
+		//Double check move is valid
+		if (GameObject.Find("MoveLogic").GetComponent<MoveLogic>().IsValidMove(x, y, team, temp))
+		{
+			//Set claimed tile
+			temp[x][y] = new Tile(team, true);
+			
+			//Check every direction to see if tiles could be claimed
+			List<Direction> enemyDirections = new List<Direction>();
+			MoveLogic logic = GameObject.Find("MoveLogic").GetComponent<MoveLogic>();
+			foreach (var dir in Enum.GetValues(typeof(Direction)))
+			{
+				if (logic.EnemyInDirection((Direction)dir, team, x, y, temp))
+				{
+					enemyDirections.Add((Direction)dir);
+				}
+			}
+			//Go though all directions enemy found, see if can claim tiles
+			foreach (var direction in enemyDirections)
+			{
+				//Debug.Log("SETTING TILES");
+				logic.SetTilesOnCapture(x, y, team, direction, temp);
+			}
+		}
+		
+		return temp;
 	}
 }

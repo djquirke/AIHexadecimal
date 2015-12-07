@@ -8,73 +8,88 @@ public class GameManager : MonoBehaviour {
 	private List<List<Tile>> game_board;
 	private int whiteCount = 0, blackCount = 0;
 	private const int width = 8, height = 8;
-	private bool game_over = false;
-	private Team currentGo = Team.BLACK;
+	private bool game_over = false, ai_move = false, can_run = false;
+	private Team currentGo = Team.BLACK, playerTeam = Team.NONE;
 
 	// Use this for initialization
 	void Start () {
 		game_board = new List<List<Tile>>();
 		game_board = GameObject.Find("Board").GetComponent<BoardManager>().Initialise(currentGo);
-		GameObject.Find("Player").GetComponent<Player>().Initialise(Team.BLACK);
+		//GameObject.Find("Player").GetComponent<Player>().Initialise(Team.BLACK);
+		playerTeam = Team.BLACK;
 		GameObject.Find("AiAgent").GetComponent<AI>().Initialise(Team.WHITE);
 		CalculateScores();
 	}
-	
+
 	// Update is called once per frame
 	void Update () {
-	
+		//if true, the AI can make a move
+		if(ai_move && can_run && !game_over)
+		{
+			game_board = GameObject.Find("AiAgent").GetComponent<AI>().AiMove(game_board);
+			SwitchPlayerTurn();
+			GameObject.Find("Board").GetComponent<BoardManager>().UpdateBoard(ref game_board);
+			GameObject.Find("Board").GetComponent<BoardManager>().ShowValidMoves(currentGo, game_board);
+			CalculateScores();
+			
+			if(GameOver())
+			{
+				GameObject.Find("Board").GetComponent<BoardManager>().UpdateBoard(ref game_board);
+				game_over = true;
+			}
+			can_run = false;
+			ai_move = false;
+		}
+		//skip a frame to allow Unity render function to show the players move
+		if(ai_move)
+			can_run = true;
+
+		DisplayScores();
 	}
 
-	//display scores
 	void OnGUI()
 	{
-		GameObject.Find ("WhiteScore").GetComponent<Text> ().text = ("WHITE COUNTERS: " + whiteCount);
-		GameObject.Find ("BlackScore").GetComponent<Text> ().text = ("BLACK COUNTERS: " + blackCount);
-
 		if(game_over)
 		{
 			if(whiteCount > blackCount)
 			{
-				DisplayGameOver(Team.WHITE.ToString());
+				GUI.Label(new Rect(600, 35, 100, 100), "YOU LOSE!");
 			}
 			else if (blackCount > whiteCount)
 			{
-				DisplayGameOver(Team.BLACK.ToString());
+				GUI.Label(new Rect(600, 35, 100, 100), "YOU WIN!");
 			}
 			else
 			{
-				DisplayGameOver("DRAW");
+				GUI.Label(new Rect(600, 35, 100, 100), "IT'S A DRAW!");
 			}
 		}
 	}
 
+	//display scores
+	void DisplayScores()
+	{
+		GameObject.Find ("WhiteScore").GetComponent<Text> ().text = ("WHITE COUNTERS: " + whiteCount);
+		GameObject.Find ("BlackScore").GetComponent<Text> ().text = ("BLACK COUNTERS: " + blackCount);
+	}
+
 	public void PlayerClick(int x, int y)
 	{
-		if(!game_over)
+		if(!game_over && !ai_move)
 		{
-			Debug.Log("CLICK");
+			//Debug.Log("CLICK");
 
-			game_board = GameObject.Find("Player").GetComponent<Player>().PlayerMove(x, y, game_board, currentGo);
+			game_board = GameObject.Find("MoveLogic").GetComponent<MoveLogic>().MakeMove(x, y, playerTeam, game_board);
 			SwitchPlayerTurn();
-			GameObject.Find("Board").GetComponent<BoardManager>().UpdateBoard(currentGo, ref game_board);
+			GameObject.Find("Board").GetComponent<BoardManager>().UpdateBoard(ref game_board);
 			CalculateScores();
 			
 			if(GameOver())
 			{
 				game_over = true;
-				return;
 			}
 
-//			game_board = GameObject.Find("AI").GetComponent<AI>().AiMove(game_board);
-//			GameObject.Find("AiAgent").GetComponent<BoardManager>().UpdateBoard(ref game_board);
-//			CalculateScores();
-//
-//			if(GameOver())
-//			{
-//				game_over = true;
-//				return;
-//			}
-//			SwitchPlayerTurn();
+			ai_move = true;
 		}
 	}
 
@@ -131,9 +146,20 @@ public class GameManager : MonoBehaviour {
 	}
 
 
-
 	void DisplayGameOver(string winner)
 	{
-		Debug.Log(winner + " wins");
+		if(winner == playerTeam.ToString())
+		{
+			GUI.Label(new Rect(100, 100, 100, 100), "YOU WIN!");
+		}
+		else if(winner == "BLACK")
+		{
+			GUI.Label(new Rect(100, 100, 100, 100), "YOU LOSE!");
+		}
+		else
+		{
+			GUI.Label(new Rect(100, 100, 100, 100), "IT'S A DRAW!");
+		}
+		//Debug.Log(winner + " wins");
 	}
 }
