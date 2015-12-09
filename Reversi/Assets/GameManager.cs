@@ -15,7 +15,6 @@ public class GameManager : MonoBehaviour {
 	void Start () {
 		game_board = new List<List<Tile>>();
 		game_board = GameObject.Find("Board").GetComponent<BoardManager>().Initialise(currentGo);
-		//GameObject.Find("Player").GetComponent<Player>().Initialise(Team.BLACK);
 		playerTeam = Team.BLACK;
 		GameObject.Find("AiAgent").GetComponent<AI>().Initialise(Team.WHITE);
 		CalculateScores();
@@ -47,6 +46,7 @@ public class GameManager : MonoBehaviour {
 		DisplayScores();
 	}
 
+	//display win/lose on game over
 	void OnGUI()
 	{
 		if(game_over)
@@ -73,16 +73,15 @@ public class GameManager : MonoBehaviour {
 		GameObject.Find ("BlackScore").GetComponent<Text> ().text = ("BLACK COUNTERS: " + blackCount);
 	}
 
+	//run the player move logic when the player clicks on a hint tile on their turn
 	public void PlayerClick(int x, int y)
 	{
 		if(!game_over && !ai_move)
 		{
-			//Debug.Log("CLICK");
-
 			game_board = GameObject.Find("MoveLogic").GetComponent<MoveLogic>().MakeMove(x, y, playerTeam, game_board);
-			SwitchPlayerTurn();
 			GameObject.Find("Board").GetComponent<BoardManager>().UpdateBoard(ref game_board);
 			CalculateScores();
+			SwitchPlayerTurn();
 			
 			if(GameOver())
 			{
@@ -93,8 +92,6 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
-
-
 	void SwitchPlayerTurn()
 	{
 		if(currentGo == Team.BLACK)
@@ -103,7 +100,6 @@ public class GameManager : MonoBehaviour {
 			currentGo = Team.BLACK;
 	}
 
-	
 	//sum counters for each team
 	void CalculateScores()
 	{
@@ -143,23 +139,5 @@ public class GameManager : MonoBehaviour {
 		}
 		
 		return true;
-	}
-
-
-	void DisplayGameOver(string winner)
-	{
-		if(winner == playerTeam.ToString())
-		{
-			GUI.Label(new Rect(100, 100, 100, 100), "YOU WIN!");
-		}
-		else if(winner == "BLACK")
-		{
-			GUI.Label(new Rect(100, 100, 100, 100), "YOU LOSE!");
-		}
-		else
-		{
-			GUI.Label(new Rect(100, 100, 100, 100), "IT'S A DRAW!");
-		}
-		//Debug.Log(winner + " wins");
 	}
 }

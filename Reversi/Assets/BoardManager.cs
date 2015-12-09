@@ -9,16 +9,6 @@ public class BoardManager : MonoBehaviour {
 	Tile white = new Tile(Team.WHITE, true);
 	Tile black = new Tile(Team.BLACK, true);
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-
 	public List<List<Tile>> Initialise(Team currentGo)
 	{
 		List<List<Tile>> board = new List<List<Tile>>();
@@ -30,6 +20,7 @@ public class BoardManager : MonoBehaviour {
 		return board;
 	}
 
+	//create the initial board with empty tiles
 	List<List<Tile>> CreateBoard(List<List<Tile>> board)
 	{
 		for (int i = 0; i < height; i++)
@@ -45,7 +36,8 @@ public class BoardManager : MonoBehaviour {
 
 		return board;
 	}
-	
+
+	//setup the 4 tiles in the centre of the board
 	List<List<Tile>> SetUpBoard(List<List<Tile>> board)
 	{
 		int wsmaller = (width / 2) - 1;
@@ -60,19 +52,14 @@ public class BoardManager : MonoBehaviour {
 		return board;
 	}
 
+	//draw new board
 	public void UpdateBoard(ref List<List<Tile>> board)
-	{
-		//draw new board
-		DrawBoard(board);
-	}
-	
-	void DrawBoard(List<List<Tile>> board)
 	{
 		foreach (var counter in GameObject.FindGameObjectsWithTag("Counter"))
 		{
 			GameObject.Destroy(counter);
 		}
-
+		
 		foreach (var valid_move in GameObject.FindGameObjectsWithTag("Marker"))
 		{
 			GameObject.Destroy(valid_move);
@@ -100,16 +87,15 @@ public class BoardManager : MonoBehaviour {
 		}
 	}
 
+	//check if any move available for team passed in
 	public bool IsMoveAvailable(Team team, List<List<Tile>> board)
 	{
 		bool ret = false;
 		MoveLogic logic = GameObject.Find("MoveLogic").GetComponent<MoveLogic>();
-		//loop through all grid spaces
 		for (int i = 0; i < width; i++)
 		{
 			for (int j = 0; j < height; j++)
 			{
-				//if tile is occupied - ignore
 				if (board[i][j].occupied)
 					continue;
 				//check if the tile could be taken by current player
@@ -127,6 +113,7 @@ public class BoardManager : MonoBehaviour {
 		return ret;
 	}
 
+	//show all valid moves for a team
 	public void ShowValidMoves(Team team, List<List<Tile>> board)
 	{
 		foreach (var item in GameObject.FindGameObjectsWithTag("Marker"))
@@ -134,7 +121,8 @@ public class BoardManager : MonoBehaviour {
 			Destroy(item);
 		}
 
-		if(!GameObject.Find("MoveLogic").GetComponent<MoveLogic>().AnyMovesAvail(team, board))
+		//if no moves are available, quit
+		if(!GameObject.Find("Board").GetComponent<BoardManager>().IsMoveAvailable(team, board))
 			return;
 
 		MoveLogic logic = GameObject.Find("MoveLogic").GetComponent<MoveLogic>();
@@ -142,6 +130,7 @@ public class BoardManager : MonoBehaviour {
 		{
 			for (int j = 0; j < width; j++)
 			{
+				//setup the hint counter when a valid move is found
 				if (logic.IsValidMove(i, j, team, board))
 				{
 					//Set tile location

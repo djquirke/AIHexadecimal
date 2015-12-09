@@ -7,32 +7,7 @@ public class MoveLogic : MonoBehaviour {
 
 	private const int width = 8, height = 8;
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-
-	// Update is called once per frame
-	void Update () {
-	
-	}
-
-	public bool AnyMovesAvail(Team team, List<List<Tile>> board)
-	{
-		bool ret = false;
-		for(int i = 0; i < height; i++)
-		{
-			for(int j = 0; j < width; j++)
-			{
-				if(IsValidMove(i, j, team, board))
-				{
-					ret = true;
-				}
-			}
-		}
-		return ret;
-	}
-
+	//check if the coordinates passed in is a valid move for a team
 	public bool IsValidMove(int x, int y, Team team, List<List<Tile>> board)
 	{
 		//Return false if out of bounds
@@ -53,22 +28,25 @@ public class MoveLogic : MonoBehaviour {
 				enemyDirections.Add((Direction)i);
 			}
 		}
-		
-		//Check if a valid move could be made from every direction there is an enemy
+
 		bool validMove = false;
 		if (enemyFound == false)
 			return false;
-		else
-			foreach (var direction in enemyDirections)
+
+		//Check if a valid move could be made from every direction there is an enemy	else
 		{
-			if (ValidMoveRecursion(x, y, team, direction, board))
+			foreach (var direction in enemyDirections)
 			{
-				validMove = true;
+				if (ValidMoveRecursion(x, y, team, direction, board))
+				{
+					validMove = true;
+				}
 			}
 		}
 		return validMove;
 	}
 
+	//check each direction from selected tile to see if it is an enemy tile
 	public bool EnemyInDirection(Direction direction, Team team, int x, int y, List<List<Tile>> board)
 	{
 		switch (direction)
@@ -159,6 +137,8 @@ public class MoveLogic : MonoBehaviour {
 		return false;
 	}
 
+	//continue moving in a direction until a friendly tile is found to confirm
+	//that the direction is a legitimate move
 	bool ValidMoveRecursion(int x, int y, Team team, Direction direction, List<List<Tile>> board)
 	{
 		//Generate new coordinates based on direction
@@ -184,6 +164,7 @@ public class MoveLogic : MonoBehaviour {
 		return false;
 	}
 
+	//move to the next square in the movement direction
 	static int[] GetCoordinatesFromDirection(Direction direction)
 	{
 		int[] coordinates = new int[2] { 0, 0 };
@@ -219,6 +200,7 @@ public class MoveLogic : MonoBehaviour {
 		return coordinates;
 	}
 
+	//check if the tiles can be captured and take them if they can
 	public bool SetTilesOnCapture(int x, int y, Team team, Direction direction, List<List<Tile>> board)
 	{
 		List<List<Tile>> temp_board = new List<List<Tile>>();
@@ -241,7 +223,6 @@ public class MoveLogic : MonoBehaviour {
 		{
 			if(SetTilesOnCapture(newX, newY, team, direction, temp_board))
 			{
-                //Debug.Log("setting a tile");
 				temp_board[newX][newY] = new Tile(team, true);
 				return true;
 			}
@@ -250,6 +231,7 @@ public class MoveLogic : MonoBehaviour {
 		return false;
 	}
 
+	//commit to making a move to the main board
 	public List<List<Tile>> MakeMove(int x, int y, Team team, List<List<Tile>> board)
 	{
 		List<List<Tile>> temp = GameObject.Find("AiAgent").GetComponent<AI>().CopyBoard(board);

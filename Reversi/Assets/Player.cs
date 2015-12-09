@@ -5,16 +5,7 @@ public class Player : MonoBehaviour {
     
 	private int x, y;
 
-	// Use this for initialization
-	void Start () {
-        
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-
+	//attach to each hint and run the player click when the hint tile is clicked
     void OnMouseDown()
     {
 		GameObject.Find("Game Manager").GetComponent<GameManager> ().PlayerClick(x, y);

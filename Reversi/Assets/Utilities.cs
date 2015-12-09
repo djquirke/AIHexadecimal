@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
+//stores the tile's team
 public enum Team
 {
     BLACK,
@@ -9,6 +10,7 @@ public enum Team
     NONE
 }
 
+//stores a board tile
 public class Tile
 {
     public Team team { get; set; }
@@ -21,6 +23,7 @@ public class Tile
     }
 }
 
+//stores a node in the tree for MCTS
 class TreeNode
 {
 	public Move move;
@@ -35,12 +38,14 @@ class TreeNode
 		board = new List<List<Tile>>();
 	}
 	
+    //evaluation function Upper Confidence Bound
 	public float CalculateUCT ()
 	{
 		return Q + (2*(1/Mathf.Sqrt(2))* Mathf.Sqrt((2*Mathf.Log10(Parent.N))/N));
 	}
 }
 
+//stores a move that the ai made to get to the next state
 public struct Move
 {
 	public int x, y;
@@ -52,6 +57,7 @@ public struct Move
 	}
 }
 
+//definition for each of the 8 directions available as a move
 public enum Direction
 {
 	North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest
